@@ -1,91 +1,72 @@
 # mesa
 
+Mesa — Interfaz web ligera
+
 Descripción
 -----------
-Mesa es una aplicación web (HTML/CSS/JavaScript) orientada a [describir brevemente el propósito del proyecto — p. ej. "gestionar reservas de mesas", "mostrar visualizaciones interactivas", "componente de UI para tablas", etc.]. Este repositorio contiene la versión frontend construida con HTML, CSS y JavaScript.
+Mesa es una interfaz web ligera construida con HTML, CSS y JavaScript. Está pensada para mostrar y manipular datos en forma de tablas y componentes interactivos, ideal como base para una UI de gestión, un dashboard o un componente reutilizable de front-end.
 
 Demo
 ----
-- Demo en vivo (GitHub Pages): https://aleweing.github.io/mesa/ (si aplica)
-- Capturas: Añade aquí imágenes o GIFs representativos del proyecto.
+- Demo en vivo (si está desplegado): https://aleweing.github.io/mesa/
+- Añade capturas o GIFs en la sección "assets/" y actualiza esta sección con los enlaces.
 
-Características
----------------
-- Interfaz responsiva y accesible
-- Componentes interactivos en vanilla JavaScript
-- Estilos con CSS modular
-- Fácil de desplegar en GitHub Pages
+Principales características
+--------------------------
+- Componentes UI responsivos y accesibles
+- Interactividad en vanilla JavaScript (sin frameworks)
+- Estilos con CSS modular y fáciles de personalizar
+- Estructura simple para integrar en proyectos existentes
 
 Requisitos
 ---------
-- Node.js >= 14 (opcional, solo si usas herramientas de desarrollo)
-- npm o yarn (opcional)
+- Navegador moderno (Chrome, Firefox, Edge, Safari)
+- Node.js y npm sólo si usas herramientas de desarrollo (opcional)
 
-Instalación (desarrollo)
-------------------------
+Instalación y ejecución
+----------------------
 1. Clona el repositorio:
+
    git clone https://github.com/aleweing/mesa.git
-2. Accede al directorio:
    cd mesa
-3. Instala dependencias (si existe package.json):
-   npm install
-   o
-   yarn install
 
-Scripts útiles (ejemplos)
--------------------------
-Estos scripts son ejemplos comunes. Ajusta o añade los que correspondan en tu package.json.
+2. Abrir `index.html` directamente en el navegador para probar la versión estática.
 
-- npm start — Inicia un servidor de desarrollo (p. ej. usando live-server o vite)
-- npm run build — Empaqueta la aplicación para producción
-- npm test — Ejecuta tests
-- npm run lint — Ejecuta linter (ESLint/Prettier)
-- npm run deploy — Despliega a GitHub Pages (p. ej. usando gh-pages)
+3. (Opcional) Usar un servidor de desarrollo para habilitar recarga en caliente:
 
-Uso
----
-- Abrir index.html en el navegador.
-- Si usas servidor de desarrollo:
-  npm start
-  Luego abrir http://localhost:3000 (o el puerto configurado).
+   - Con `live-server`:
+     npm install -g live-server
+     live-server
+
+   - Con `http-server`:
+     npm install -g http-server
+     http-server .
 
 Estructura del proyecto
 -----------------------
-- /index.html — Punto de entrada
-- /src/ — Código fuente JavaScript
-- /styles/ — Archivos CSS
-- /assets/ — Imágenes y recursos estáticos
-- /dist/ — Build de producción (generado)
+- index.html — Punto de entrada
+- src/ — Código fuente JavaScript
+- styles/ — Archivos CSS
+- assets/ — Imágenes y recursos
+- dist/ — Build de producción (si procede)
 
 Cómo contribuir
 ---------------
 1. Haz fork del repositorio.
-2. Crea una rama feature/fix: git checkout -b feature/mi-mejora
-3. Realiza tus cambios y añade tests si procede.
-4. Haz commit y push a tu fork.
-5. Abre un Pull Request describiendo los cambios.
-
-Buenas prácticas
-----------------
-- Mantén el código modular y comentado.
-- Añade pruebas para lógica compleja.
-- Sigue convenciones de estilo (ESLint/Prettier).
+2. Crea una rama con tu cambio: `git checkout -b feature/nombre-de-la-rama`.
+3. Realiza los cambios y añade commits claros.
+4. Abre un Pull Request describiendo el propósito y los cambios realizados.
 
 Licencia
 --------
-Indica la licencia aquí (por ejemplo, MIT). Si no has decidido, puedes añadir:
-
-MIT © 2026 [Tu Nombre]
+Añade la licencia que desees usar (por ejemplo, MIT). Si quieres, puedo crear el archivo `LICENSE` con la plantilla MIT.
 
 Contacto
 -------
 - Autor: aleweing
 - Repo: https://github.com/aleweing/mesa
-- Para dudas o sugerencias: abre un issue en el repositorio.
+- Para sugerencias o problemas: abre un issue en el repositorio.
 
-Notas finales
--------------
-Completa las secciones de "Descripción", "Demo" y "Licencia" según los detalles reales del proyecto. Si quieres, puedo:
-- Generar automáticamente un package.json con scripts básicos,
-- Crear y commitear este README.md en el repo (dime si quieres que lo haga),
-- Personalizar el README con capturas o ejemplos reales de uso.
+Notas
+-----
+Si quieres que ajuste el README (p. ej. añadir ejemplos de uso, comandos npm, badges o capturas), dímelo y lo actualizo. También puedo generar automáticamente un `package.json` básico y un script `npm start` para servidor de desarrollo.
