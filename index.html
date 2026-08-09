@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mesa</title>
+  <meta name="theme-color" content="#20261F" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- Config: primera vez que se abre, pide la URL del Worker y la clave -->
+    <div id="view-config" class="view hidden">
+      <div class="config-box">
+        <h1 class="brand">Mesa<span class="brand-dot">.</span></h1>
+        <p class="muted">Tu cuaderno personal de restaurantes.</p>
+        <label class="field">
+          <span>URL de tu API (Cloudflare Worker)</span>
+          <input type="url" id="cfg-url" placeholder="https://mesa-api.tuusuario.workers.dev" />
+        </label>
+        <label class="field">
+          <span>Clave de acceso</span>
+          <input type="password" id="cfg-key" placeholder="Tu clave privada" />
+        </label>
+        <button class="btn-primary" id="cfg-save">Guardar y entrar</button>
+      </div>
+    </div>
+
+    <!-- Lista -->
+    <div id="view-list" class="view hidden">
+      <header class="topbar">
+        <h1 class="brand">Mesa<span class="brand-dot">.</span></h1>
+        <button class="icon-btn" id="open-settings" aria-label="Ajustes">⚙</button>
+      </header>
+
+      <div id="list-empty" class="empty hidden">
+        <p class="empty-title">Aún no hay ninguna mesa apuntada</p>
+        <p class="muted">Toca “+” cuando vuelvas de tu próximo restaurante.</p>
+      </div>
+
+      <ul id="restaurant-list" class="ticket-list"></ul>
+
+      <button class="fab" id="fab-add" aria-label="Añadir restaurante">+</button>
+    </div>
+
+    <!-- Detalle -->
+    <div id="view-detail" class="view hidden">
+      <header class="topbar">
+        <button class="icon-btn" id="back-from-detail" aria-label="Volver">←</button>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="edit-restaurant" aria-label="Editar">✎</button>
+          <button class="icon-btn" id="delete-restaurant" aria-label="Eliminar">🗑</button>
+        </div>
+      </header>
+
+      <div id="detail-photos" class="photo-strip"></div>
+
+      <div class="detail-body">
+        <h2 id="detail-name" class="restaurant-name"></h2>
+        <a id="detail-address" class="link-row" target="_blank" rel="noopener"></a>
+        <a id="detail-phone" class="link-row" href="#"></a>
+        <p id="detail-notes" class="notes hidden"></p>
+
+        <div class="divider"></div>
+
+        <h3 class="section-label">Platos</h3>
+        <ul id="dish-list" class="dish-list"></ul>
+        <button class="btn-ghost" id="add-dish">+ Añadir plato</button>
+
+        <div class="divider"></div>
+
+        <h3 class="section-label">Fotos</h3>
+        <label class="btn-ghost upload-label">
+          + Añadir foto
+          <input type="file" id="photo-input" accept="image/*" capture="environment" multiple hidden />
+        </label>
+      </div>
+    </div>
+
+    <!-- Formulario restaurante (crear/editar) -->
+    <div id="view-form" class="view hidden">
+      <header class="topbar">
+        <button class="icon-btn" id="back-from-form" aria-label="Cancelar">←</button>
+        <h2 id="form-title" class="form-title">Nueva mesa</h2>
+        <button class="icon-btn" id="save-restaurant" aria-label="Guardar">✓</button>
+      </header>
+      <div class="detail-body">
+        <label class="field">
+          <span>Nombre *</span>
+          <input type="text" id="form-name" placeholder="Ej. Ca'n Pep" />
+        </label>
+        <label class="field">
+          <span>Dirección</span>
+          <input type="text" id="form-address" placeholder="Calle, ciudad" />
+        </label>
+        <label class="field">
+          <span>Teléfono</span>
+          <input type="tel" id="form-phone" placeholder="Para reservar" />
+        </label>
+        <label class="field">
+          <span>Notas generales</span>
+          <textarea id="form-notes" rows="3" placeholder="Para mi hija: solo arroz con pollo…"></textarea>
+        </label>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+:root {
+  --ink: #1B211A;
+  --bg: #20261F;
+  --card: #2A3128;
+  --card-line: #3A4436;
+  --paper: #EDE6D6;
+  --paper-dim: #B9B4A4;
+  --ochre: #C89B3C;
+  --ochre-soft: #8A6F30;
+  --sage: #8FA876;
+  --rust: #B85C3E;
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--paper);
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.hidden { display: none !important; }
+
+.view {
+  min-height: 100vh;
+  padding-bottom: 96px;
+}
+
+/* Topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top) + 16px) 20px 12px;
+  position: sticky;
+  top: 0;
+  background: linear-gradient(var(--bg) 80%, transparent);
+  z-index: 5;
+}
+.topbar-actions { display: flex; gap: 8px; }
+
+.brand {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.brand-dot { color: var(--ochre); }
+
+.icon-btn {
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  color: var(--paper);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn:focus-visible, .btn-primary:focus-visible, .btn-ghost:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--ochre);
+  outline-offset: 2px;
+}
+
+/* Config screen */
+.config-box { padding: 40px 24px; max-width: 420px; margin: 10vh auto 0; }
+.muted { color: var(--paper-dim); font-size: 14px; }
+
+.field {
+  display: block;
+  margin: 18px 0;
+}
+.field span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--paper-dim);
+  margin-bottom: 6px;
+}
+.field input, .field textarea {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  color: var(--paper);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-family: var(--font-body);
+}
+.field textarea { resize: vertical; }
+
+.btn-primary {
+  width: 100%;
+  background: var(--ochre);
+  color: var(--ink);
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-weight: 600;
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+.btn-ghost {
+  display: inline-block;
+  background: transparent;
+  border: 1px dashed var(--card-line);
+  color: var(--paper-dim);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: center;
+  cursor: pointer;
+}
+.upload-label { width: 100%; }
+
+/* Empty state */
+.empty { padding: 20vh 32px 0; text-align: center; }
+.empty-title { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
+
+/* Ticket list — cards with a perforated top edge, like an order ticket */
+.ticket-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ticket-card {
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 4px;
+  padding: 16px 16px 14px;
+  position: relative;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.ticket-card::before {
+  content: "";
+  position: absolute;
+  top: -1px; left: 12px; right: 12px;
+  height: 1px;
+  background-image: repeating-linear-gradient(90deg, var(--ochre-soft) 0 6px, transparent 6px 12px);
+}
+
+.ticket-cover {
+  width: 56px; height: 56px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--card-line);
+}
+.ticket-cover-placeholder {
+  width: 56px; height: 56px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--card-line);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  color: var(--paper-dim);
+  font-size: 20px;
+}
+
+.ticket-info { flex: 1; min-width: 0; }
+.ticket-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ticket-address {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--paper-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* FAB */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--ochre);
+  color: var(--ink);
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+
+/* Detail */
+.photo-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 16px;
+}
+.photo-strip img {
+  width: 120px; height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.detail-body { padding: 4px 20px 20px; }
+
+.restaurant-name {
+  font-family: var(--font-display);
+  font-size: 28px;
+  margin: 4px 0 6px;
+}
+
+.link-row {
+  display: block;
+  color: var(--sage);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+.link-row:empty { display: none; }
+
+.notes {
+  font-style: italic;
+  color: var(--paper-dim);
+  border-left: 2px solid var(--ochre-soft);
+  padding-left: 12px;
+  margin: 16px 0 0;
+}
+
+.divider {
+  height: 1px;
+  background-image: repeating-linear-gradient(90deg, var(--card-line) 0 6px, transparent 6px 12px);
+  margin: 22px 0;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--paper-dim);
+  margin: 0 0 10px;
+}
+
+/* Dish list — order-ticket rows with a stamp */
+.dish-list { list-style: none; margin: 0; padding: 0; }
+.dish-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--card-line);
+}
+.dish-row:last-child { border-bottom: none; }
+.dish-name { flex: 1; font-size: 15px; }
+.dish-notes { display: block; font-size: 12px; color: var(--paper-dim); margin-top: 2px; }
+
+.stamp {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  transform: rotate(-8deg);
+  flex-shrink: 0;
+}
+.stamp.liked { color: var(--sage); }
+.stamp.disliked { color: var(--rust); }
+.stamp.neutral { color: var(--paper-dim); border-style: dashed; }
+
+.form-title { font-family: var(--font-display); font-size: 18px; margin: 0; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 20;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
