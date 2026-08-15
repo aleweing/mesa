@@ -288,16 +288,13 @@ body {
 }
 
 .dish-thumbs {
-  display: flex;
-  gap: 6px;
   margin: 8px 0 2px 46px;
-  overflow-x: auto;
 }
 .dish-thumb {
-  width: 48px; height: 48px;
+  width: 64px; height: 64px;
   border-radius: 5px;
   object-fit: cover;
-  flex-shrink: 0;
+  display: block;
 }
 
 .stamp {
@@ -392,19 +389,74 @@ body {
   width: 36px; height: 36px;
   border-radius: 50%;
   font-size: 16px;
+  z-index: 2;
 }
-.pv-delete {
+.pv-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: var(--paper);
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  font-size: 22px;
+  z-index: 2;
+}
+.pv-prev { left: 10px; }
+.pv-next { right: 10px; }
+.pv-nav.hidden { display: none; }
+
+.pv-actions {
   position: absolute;
   bottom: calc(env(safe-area-inset-bottom) + 20px);
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+.pv-assign {
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  color: var(--paper);
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+.pv-delete {
   background: var(--rust);
   color: var(--paper);
   border: none;
   border-radius: 20px;
-  padding: 10px 20px;
+  padding: 10px 16px;
   font-size: 14px;
   font-weight: 500;
+}
+
+.pv-dish-picker {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + 76px);
+  left: 16px;
+  right: 16px;
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pv-dish-picker select {
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--card-line);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 15px;
+}
+.pv-dish-picker .btn-primary,
+.pv-dish-picker .btn-ghost {
+  margin-top: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -7,8 +7,13 @@ const state = {
   currentDishId: null,
   editingRestaurant: false,
   detailMine: true,
-  viewingPhotoId: null,
+  currentDishes: [],
   me: null,
+  // Visor de fotos
+  galleryPhotos: [],
+  galleryIndex: 0,
+  viewerContext: "general", // "general" | "dish"
+  viewerDishId: null,
 };
 
 const views = {
@@ -142,15 +147,17 @@ function renderDetail(r) {
   notesEl.classList.toggle("hidden", !r.notes);
   notesEl.textContent = r.notes || "";
 
+  state.currentDishes = r.dishes;
+
   const photosEl = document.getElementById("detail-photos");
   photosEl.innerHTML = "";
-  for (const p of r.photos) {
+  r.photos.forEach((p, index) => {
     const img = document.createElement("img");
     img.src = photoUrl(p.r2_key);
     img.alt = "";
-    img.addEventListener("click", () => openPhotoViewer(p.id, p.r2_key));
+    img.addEventListener("click", () => openPhotoViewer("general", r.photos, index));
     photosEl.appendChild(img);
-  }
+  });
 
   const dishList = document.getElementById("dish-list");
   dishList.innerHTML = "";
@@ -159,16 +166,16 @@ function renderDetail(r) {
     li.className = "dish-row";
     const stampClass = d.liked === 1 ? "liked" : d.liked === 0 ? "disliked" : "neutral";
     const stampText = d.liked === 1 ? "SÍ" : d.liked === 0 ? "NO" : "—";
-    const thumbs = (d.photos || [])
-      .map((p) => `<img class="dish-thumb" data-photo-id="${p.id}" data-r2-key="${escapeHtml(p.r2_key)}" src="${photoUrl(p.r2_key)}" alt="" />`)
-      .join("");
+    const thumb = d.photo
+      ? `<div class="dish-thumbs"><img class="dish-thumb" src="${photoUrl(d.photo.r2_key)}" alt="" /></div>`
+      : "";
     li.innerHTML = `
       <div class="dish-row-main">
         <span class="stamp ${stampClass}">${stampText}</span>
         <span class="dish-name">${escapeHtml(d.name)}${d.notes ? `<span class="dish-notes">${escapeHtml(d.notes)}</span>` : ""}</span>
-        ${r.mine ? `<button class="dish-photo-btn" data-dish-id="${d.id}" aria-label="Añadir foto al plato">📷</button>` : ""}
+        ${r.mine ? `<button class="dish-photo-btn" data-dish-id="${d.id}" aria-label="Cambiar foto del plato">📷</button>` : ""}
       </div>
-      ${thumbs ? `<div class="dish-thumbs">${thumbs}</div>` : ""}`;
+      ${thumb}`;
     li.querySelector(".dish-row-main").addEventListener("click", (e) => {
       if (e.target.closest(".dish-photo-btn")) return;
       editDish(d);
@@ -181,49 +188,134 @@ function renderDetail(r) {
         document.getElementById("dish-photo-input").click();
       });
     }
-    li.querySelectorAll(".dish-thumb").forEach((img) => {
-      img.addEventListener("click", (e) => {
+    const thumbImg = li.querySelector(".dish-thumb");
+    if (thumbImg) {
+      thumbImg.addEventListener("click", (e) => {
         e.stopPropagation();
-        openPhotoViewer(img.dataset.photoId, img.dataset.r2Key);
+        openPhotoViewer("dish", [d.photo], 0, d.id);
       });
-    });
+    }
     dishList.appendChild(li);
   }
 }
 
 async function deletePhoto(photoId) {
-  try {
-    await api(`/api/photos/${photoId}`, { method: "DELETE" });
-    openDetail(state.currentRestaurantId);
-  } catch (e) {
-    toast(e.message);
-  }
+  await api(`/api/photos/${photoId}`, { method: "DELETE" });
 }
 
-// ---------- Visor de foto a pantalla completa ----------
+// ---------- Visor de fotos (galería con navegación) ----------
 
-function openPhotoViewer(photoId, r2Key) {
-  state.viewingPhotoId = photoId;
-  document.getElementById("pv-image").src = photoUrl(r2Key);
+function openPhotoViewer(context, photos, index, dishId = null) {
+  state.viewerContext = context;
+  state.galleryPhotos = photos;
+  state.galleryIndex = index;
+  state.viewerDishId = dishId;
+  document.getElementById("pv-dish-picker").classList.add("hidden");
+  document.getElementById("pv-assign").classList.toggle("hidden", context !== "general" || !state.detailMine);
+  document.getElementById("pv-delete").textContent = context === "dish" ? "🗑 Quitar del plato" : "🗑 Eliminar";
   document.getElementById("pv-delete").classList.toggle("hidden", !state.detailMine);
+  showCurrentGalleryPhoto();
   document.getElementById("photo-viewer").classList.remove("hidden");
+}
+
+function showCurrentGalleryPhoto() {
+  const photo = state.galleryPhotos[state.galleryIndex];
+  document.getElementById("pv-image").src = photoUrl(photo.r2_key);
+  const showNav = state.galleryPhotos.length > 1;
+  document.getElementById("pv-prev").classList.toggle("hidden", !showNav);
+  document.getElementById("pv-next").classList.toggle("hidden", !showNav);
 }
 
 function closePhotoViewer() {
   document.getElementById("photo-viewer").classList.add("hidden");
+  document.getElementById("pv-dish-picker").classList.add("hidden");
   document.getElementById("pv-image").src = "";
-  state.viewingPhotoId = null;
+  state.galleryPhotos = [];
 }
 
 document.getElementById("pv-close").addEventListener("click", closePhotoViewer);
 document.getElementById("photo-viewer").addEventListener("click", (e) => {
   if (e.target.id === "photo-viewer") closePhotoViewer();
 });
+
+// Swipe táctil para pasar de foto (izquierda = siguiente, derecha = anterior)
+let pvTouchStartX = null;
+const pvViewer = document.getElementById("photo-viewer");
+pvViewer.addEventListener("touchstart", (e) => {
+  pvTouchStartX = e.touches[0].clientX;
+}, { passive: true });
+pvViewer.addEventListener("touchend", (e) => {
+  if (pvTouchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - pvTouchStartX;
+  pvTouchStartX = null;
+  if (Math.abs(dx) < 40 || state.galleryPhotos.length <= 1) return;
+  if (dx < 0) document.getElementById("pv-next").click();
+  else document.getElementById("pv-prev").click();
+}, { passive: true });
+document.getElementById("pv-prev").addEventListener("click", () => {
+  const n = state.galleryPhotos.length;
+  state.galleryIndex = (state.galleryIndex - 1 + n) % n;
+  showCurrentGalleryPhoto();
+});
+document.getElementById("pv-next").addEventListener("click", () => {
+  const n = state.galleryPhotos.length;
+  state.galleryIndex = (state.galleryIndex + 1) % n;
+  showCurrentGalleryPhoto();
+});
+
 document.getElementById("pv-delete").addEventListener("click", async () => {
-  if (!confirm("¿Eliminar esta foto?")) return;
-  const id = state.viewingPhotoId;
-  closePhotoViewer();
-  await deletePhoto(id);
+  const photo = state.galleryPhotos[state.galleryIndex];
+  try {
+    if (state.viewerContext === "dish") {
+      if (!confirm("¿Quitar la foto de este plato? (seguirá en Fotos generales)")) return;
+      await api(`/api/dishes/${state.viewerDishId}/photo`, {
+        method: "PUT",
+        body: JSON.stringify({ photo_id: null }),
+      });
+      closePhotoViewer();
+      openDetail(state.currentRestaurantId);
+    } else {
+      if (!confirm("¿Eliminar esta foto? Si estaba asignada a algún plato, también se quitará de ahí.")) return;
+      await deletePhoto(photo.id);
+      state.galleryPhotos.splice(state.galleryIndex, 1);
+      if (state.galleryPhotos.length === 0) {
+        closePhotoViewer();
+      } else {
+        state.galleryIndex = state.galleryIndex % state.galleryPhotos.length;
+        showCurrentGalleryPhoto();
+      }
+      openDetail(state.currentRestaurantId);
+    }
+  } catch (e) {
+    toast(e.message);
+  }
+});
+
+document.getElementById("pv-assign").addEventListener("click", () => {
+  const select = document.getElementById("pv-dish-select");
+  select.innerHTML = state.currentDishes
+    .map((d) => `<option value="${d.id}">${escapeHtml(d.name)}</option>`)
+    .join("");
+  document.getElementById("pv-dish-picker").classList.toggle("hidden");
+});
+document.getElementById("pv-dish-cancel").addEventListener("click", () => {
+  document.getElementById("pv-dish-picker").classList.add("hidden");
+});
+document.getElementById("pv-dish-confirm").addEventListener("click", async () => {
+  const dishId = document.getElementById("pv-dish-select").value;
+  if (!dishId) { toast("Este restaurante aún no tiene platos"); return; }
+  const photo = state.galleryPhotos[state.galleryIndex];
+  try {
+    await api(`/api/dishes/${dishId}/photo`, {
+      method: "PUT",
+      body: JSON.stringify({ photo_id: photo.id }),
+    });
+    toast("Foto asignada al plato");
+    closePhotoViewer();
+    openDetail(state.currentRestaurantId);
+  } catch (e) {
+    toast(e.message);
+  }
 });
 
 document.getElementById("photo-input").addEventListener("change", async (e) => {
@@ -241,18 +333,23 @@ document.getElementById("photo-input").addEventListener("change", async (e) => {
   openDetail(state.currentRestaurantId);
 });
 
+// Subir una foto directamente para un plato: se añade al repositorio
+// general del restaurante y se asigna a ese plato en el mismo paso
+// (reemplaza la foto que tuviera antes, si tenía).
 document.getElementById("dish-photo-input").addEventListener("change", async (e) => {
-  const files = Array.from(e.target.files);
-  for (const file of files) {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
     const fd = new FormData();
     fd.append("photo", file);
-    try {
-      await api(`/api/dishes/${state.currentDishId}/photos`, { method: "POST", body: fd });
-    } catch (err) {
-      toast(err.message);
-    }
+    const uploaded = await api(`/api/restaurants/${state.currentRestaurantId}/photos`, { method: "POST", body: fd });
+    await api(`/api/dishes/${state.currentDishId}/photo`, {
+      method: "PUT",
+      body: JSON.stringify({ photo_id: uploaded.id }),
+    });
+  } catch (err) {
+    toast(err.message);
   }
-  e.target.value = "";
   openDetail(state.currentRestaurantId);
 });
 
