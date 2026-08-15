@@ -366,6 +366,47 @@ body {
   z-index: 20;
 }
 
+.photo-viewer {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 9, 0.96);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px);
+}
+.photo-viewer img {
+  max-width: 100%;
+  max-height: calc(100% - 70px);
+  object-fit: contain;
+  border-radius: 6px;
+}
+.pv-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 16px);
+  right: 16px;
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: var(--paper);
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  font-size: 16px;
+}
+.pv-delete {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + 20px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--rust);
+  color: var(--paper);
+  border: none;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }

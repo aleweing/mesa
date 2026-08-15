@@ -6,6 +6,8 @@ const state = {
   currentRestaurantId: null,
   currentDishId: null,
   editingRestaurant: false,
+  detailMine: true,
+  viewingPhotoId: null,
   me: null,
 };
 
@@ -107,6 +109,7 @@ async function openDetail(id) {
 }
 
 function renderDetail(r) {
+  state.detailMine = r.mine;
   document.getElementById("detail-name").textContent = r.name;
 
   const ownerTag = document.getElementById("detail-owner-tag");
@@ -145,9 +148,7 @@ function renderDetail(r) {
     const img = document.createElement("img");
     img.src = photoUrl(p.r2_key);
     img.alt = "";
-    img.addEventListener("click", () => {
-      if (confirm("¿Eliminar esta foto?")) deletePhoto(p.id);
-    });
+    img.addEventListener("click", () => openPhotoViewer(p.id, p.r2_key));
     photosEl.appendChild(img);
   }
 
@@ -159,7 +160,7 @@ function renderDetail(r) {
     const stampClass = d.liked === 1 ? "liked" : d.liked === 0 ? "disliked" : "neutral";
     const stampText = d.liked === 1 ? "SÍ" : d.liked === 0 ? "NO" : "—";
     const thumbs = (d.photos || [])
-      .map((p) => `<img class="dish-thumb" data-photo-id="${p.id}" src="${photoUrl(p.r2_key)}" alt="" />`)
+      .map((p) => `<img class="dish-thumb" data-photo-id="${p.id}" data-r2-key="${escapeHtml(p.r2_key)}" src="${photoUrl(p.r2_key)}" alt="" />`)
       .join("");
     li.innerHTML = `
       <div class="dish-row-main">
@@ -183,7 +184,7 @@ function renderDetail(r) {
     li.querySelectorAll(".dish-thumb").forEach((img) => {
       img.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (confirm("¿Eliminar esta foto?")) deletePhoto(img.dataset.photoId);
+        openPhotoViewer(img.dataset.photoId, img.dataset.r2Key);
       });
     });
     dishList.appendChild(li);
@@ -198,6 +199,32 @@ async function deletePhoto(photoId) {
     toast(e.message);
   }
 }
+
+// ---------- Visor de foto a pantalla completa ----------
+
+function openPhotoViewer(photoId, r2Key) {
+  state.viewingPhotoId = photoId;
+  document.getElementById("pv-image").src = photoUrl(r2Key);
+  document.getElementById("pv-delete").classList.toggle("hidden", !state.detailMine);
+  document.getElementById("photo-viewer").classList.remove("hidden");
+}
+
+function closePhotoViewer() {
+  document.getElementById("photo-viewer").classList.add("hidden");
+  document.getElementById("pv-image").src = "";
+  state.viewingPhotoId = null;
+}
+
+document.getElementById("pv-close").addEventListener("click", closePhotoViewer);
+document.getElementById("photo-viewer").addEventListener("click", (e) => {
+  if (e.target.id === "photo-viewer") closePhotoViewer();
+});
+document.getElementById("pv-delete").addEventListener("click", async () => {
+  if (!confirm("¿Eliminar esta foto?")) return;
+  const id = state.viewingPhotoId;
+  closePhotoViewer();
+  await deletePhoto(id);
+});
 
 document.getElementById("photo-input").addEventListener("change", async (e) => {
   const files = Array.from(e.target.files);
