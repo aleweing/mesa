@@ -4,7 +4,9 @@ const state = {
   apiUrl: localStorage.getItem("mesa_api_url") || "",
   apiKey: localStorage.getItem("mesa_api_key") || "",
   currentRestaurantId: null,
+  currentDishId: null,
   editingRestaurant: false,
+  me: null,
 };
 
 const views = {
@@ -59,17 +61,22 @@ async function loadList() {
   const empty = document.getElementById("list-empty");
   list.innerHTML = "";
   try {
+    if (!state.me) {
+      const me = await api("/api/me");
+      state.me = me.owner;
+    }
     const restaurants = await api("/api/restaurants");
     empty.classList.toggle("hidden", restaurants.length > 0);
     for (const r of restaurants) {
       const li = document.createElement("li");
       li.className = "ticket-card";
+      const notMine = r.owner !== state.me;
       li.innerHTML = `
         ${r.cover_key
           ? `<img class="ticket-cover" src="${photoUrl(r.cover_key)}" alt="" />`
           : `<div class="ticket-cover-placeholder">${r.name.charAt(0).toUpperCase()}</div>`}
         <div class="ticket-info">
-          <p class="ticket-name">${escapeHtml(r.name)}</p>
+          <p class="ticket-name">${escapeHtml(r.name)}${notMine ? `<span class="ticket-shared-badge">${escapeHtml(r.owner)}</span>` : ""}</p>
           <p class="ticket-address">${escapeHtml(r.address || "")}</p>
         </div>`;
       li.addEventListener("click", () => openDetail(r.id));
@@ -101,6 +108,15 @@ async function openDetail(id) {
 
 function renderDetail(r) {
   document.getElementById("detail-name").textContent = r.name;
+
+  const ownerTag = document.getElementById("detail-owner-tag");
+  ownerTag.classList.toggle("hidden", r.mine);
+  ownerTag.textContent = r.mine ? "" : `De ${r.owner}`;
+
+  document.getElementById("edit-restaurant").classList.toggle("hidden", !r.mine);
+  document.getElementById("delete-restaurant").classList.toggle("hidden", !r.mine);
+  document.getElementById("add-dish").classList.toggle("hidden", !r.mine);
+  document.querySelector(".upload-label").classList.toggle("hidden", !r.mine);
 
   const addrEl = document.getElementById("detail-address");
   if (r.address) {
@@ -142,10 +158,34 @@ function renderDetail(r) {
     li.className = "dish-row";
     const stampClass = d.liked === 1 ? "liked" : d.liked === 0 ? "disliked" : "neutral";
     const stampText = d.liked === 1 ? "SÍ" : d.liked === 0 ? "NO" : "—";
+    const thumbs = (d.photos || [])
+      .map((p) => `<img class="dish-thumb" data-photo-id="${p.id}" src="${photoUrl(p.r2_key)}" alt="" />`)
+      .join("");
     li.innerHTML = `
-      <span class="stamp ${stampClass}">${stampText}</span>
-      <span class="dish-name">${escapeHtml(d.name)}${d.notes ? `<span class="dish-notes">${escapeHtml(d.notes)}</span>` : ""}</span>`;
-    li.addEventListener("click", () => editDish(d));
+      <div class="dish-row-main">
+        <span class="stamp ${stampClass}">${stampText}</span>
+        <span class="dish-name">${escapeHtml(d.name)}${d.notes ? `<span class="dish-notes">${escapeHtml(d.notes)}</span>` : ""}</span>
+        ${r.mine ? `<button class="dish-photo-btn" data-dish-id="${d.id}" aria-label="Añadir foto al plato">📷</button>` : ""}
+      </div>
+      ${thumbs ? `<div class="dish-thumbs">${thumbs}</div>` : ""}`;
+    li.querySelector(".dish-row-main").addEventListener("click", (e) => {
+      if (e.target.closest(".dish-photo-btn")) return;
+      editDish(d);
+    });
+    const photoBtn = li.querySelector(".dish-photo-btn");
+    if (photoBtn) {
+      photoBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        state.currentDishId = d.id;
+        document.getElementById("dish-photo-input").click();
+      });
+    }
+    li.querySelectorAll(".dish-thumb").forEach((img) => {
+      img.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (confirm("¿Eliminar esta foto?")) deletePhoto(img.dataset.photoId);
+      });
+    });
     dishList.appendChild(li);
   }
 }
@@ -166,6 +206,21 @@ document.getElementById("photo-input").addEventListener("change", async (e) => {
     fd.append("photo", file);
     try {
       await api(`/api/restaurants/${state.currentRestaurantId}/photos`, { method: "POST", body: fd });
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+  e.target.value = "";
+  openDetail(state.currentRestaurantId);
+});
+
+document.getElementById("dish-photo-input").addEventListener("change", async (e) => {
+  const files = Array.from(e.target.files);
+  for (const file of files) {
+    const fd = new FormData();
+    fd.append("photo", file);
+    try {
+      await api(`/api/dishes/${state.currentDishId}/photos`, { method: "POST", body: fd });
     } catch (err) {
       toast(err.message);
     }
@@ -232,6 +287,7 @@ document.getElementById("edit-restaurant").addEventListener("click", async () =>
   document.getElementById("form-address").value = r.address || "";
   document.getElementById("form-phone").value = r.phone || "";
   document.getElementById("form-notes").value = r.notes || "";
+  document.getElementById("form-shared").checked = !!r.shared;
   showView("form");
 });
 
@@ -246,6 +302,7 @@ document.getElementById("fab-add").addEventListener("click", () => {
   document.getElementById("form-address").value = "";
   document.getElementById("form-phone").value = "";
   document.getElementById("form-notes").value = "";
+  document.getElementById("form-shared").checked = false;
   showView("form");
 });
 
@@ -262,6 +319,7 @@ document.getElementById("save-restaurant").addEventListener("click", async () =>
     address: document.getElementById("form-address").value.trim() || null,
     phone: document.getElementById("form-phone").value.trim() || null,
     notes: document.getElementById("form-notes").value.trim() || null,
+    shared: document.getElementById("form-shared").checked,
   };
   try {
     if (state.editingRestaurant) {
@@ -284,6 +342,7 @@ document.getElementById("cfg-save").addEventListener("click", () => {
   if (!url || !key) { toast("Rellena los dos campos"); return; }
   state.apiUrl = url;
   state.apiKey = key;
+  state.me = null;
   localStorage.setItem("mesa_api_url", url);
   localStorage.setItem("mesa_api_key", key);
   loadList();

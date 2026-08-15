@@ -272,16 +272,33 @@ body {
 
 /* Dish list — order-ticket rows with a stamp */
 .dish-list { list-style: none; margin: 0; padding: 0; }
-.dish-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--card-line);
-}
+.dish-row { padding: 10px 0; border-bottom: 1px solid var(--card-line); }
 .dish-row:last-child { border-bottom: none; }
+.dish-row-main { display: flex; align-items: center; gap: 12px; }
 .dish-name { flex: 1; font-size: 15px; }
 .dish-notes { display: block; font-size: 12px; color: var(--paper-dim); margin-top: 2px; }
+
+.dish-photo-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  opacity: 0.7;
+  flex-shrink: 0;
+  padding: 4px;
+}
+
+.dish-thumbs {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 2px 46px;
+  overflow-x: auto;
+}
+.dish-thumb {
+  width: 48px; height: 48px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
 
 .stamp {
   font-family: var(--font-mono);
@@ -300,6 +317,40 @@ body {
 .stamp.neutral { color: var(--paper-dim); border-style: dashed; }
 
 .form-title { font-family: var(--font-display); font-size: 18px; margin: 0; }
+
+.field-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0;
+  font-size: 14px;
+  color: var(--paper-dim);
+}
+.field-toggle input { width: 18px; height: 18px; accent-color: var(--ochre); }
+
+.owner-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  background: var(--ochre);
+  border-radius: 10px;
+  padding: 3px 9px;
+  margin-bottom: 8px;
+}
+
+.ticket-shared-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--ink);
+  background: var(--ochre);
+  border-radius: 8px;
+  padding: 2px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
 
 .toast {
   position: fixed;
