@@ -8,6 +8,7 @@ const state = {
   editingRestaurant: false,
   detailMine: true,
   currentDishes: [],
+  galleryByCategory: { general: [], menu: [], ticket: [] },
   me: null,
   // Visor de fotos
   galleryPhotos: [],
@@ -100,6 +101,32 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
+function formatDate(isoLike) {
+  if (!isoLike) return "";
+  const d = new Date(isoLike.replace(" ", "T") + "Z");
+  if (isNaN(d)) return "";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+function renderPhotoStrip(elementId, photos) {
+  const el = document.getElementById(elementId);
+  el.innerHTML = "";
+  if (photos.length === 0) {
+    el.innerHTML = `<p class="photo-strip-empty">—</p>`;
+    return;
+  }
+  photos.forEach((p, index) => {
+    const item = document.createElement("div");
+    item.className = "photo-strip-item";
+    item.innerHTML = `<img src="${photoUrl(p.r2_key)}" alt="" /><div class="photo-strip-date">${formatDate(p.created_at)}</div>`;
+    item.querySelector("img").addEventListener("click", () => openPhotoViewer("general", photos, index));
+    el.appendChild(item);
+  });
+}
+
 // ---------- Detalle ----------
 
 async function openDetail(id) {
@@ -149,15 +176,18 @@ function renderDetail(r) {
 
   state.currentDishes = r.dishes;
 
-  const photosEl = document.getElementById("detail-photos");
-  photosEl.innerHTML = "";
-  r.photos.forEach((p, index) => {
-    const img = document.createElement("img");
-    img.src = photoUrl(p.r2_key);
-    img.alt = "";
-    img.addEventListener("click", () => openPhotoViewer("general", r.photos, index));
-    photosEl.appendChild(img);
-  });
+  const assignedPhotoIds = new Set(r.dishes.map((d) => d.photo_id).filter(Boolean));
+  const visiblePhotos = r.photos.filter((p) => !assignedPhotoIds.has(p.id));
+  const byCategory = {
+    general: visiblePhotos.filter((p) => !p.category || p.category === "general"),
+    menu: visiblePhotos.filter((p) => p.category === "menu"),
+    ticket: visiblePhotos.filter((p) => p.category === "ticket"),
+  };
+  state.galleryByCategory = byCategory;
+
+  renderPhotoStrip("photos-general", byCategory.general);
+  renderPhotoStrip("photos-menu", byCategory.menu);
+  renderPhotoStrip("photos-ticket", byCategory.ticket);
 
   const dishList = document.getElementById("dish-list");
   dishList.innerHTML = "";
@@ -211,7 +241,9 @@ function openPhotoViewer(context, photos, index, dishId = null) {
   state.galleryIndex = index;
   state.viewerDishId = dishId;
   document.getElementById("pv-dish-picker").classList.add("hidden");
+  document.getElementById("pv-category-picker").classList.add("hidden");
   document.getElementById("pv-assign").classList.toggle("hidden", context !== "general" || !state.detailMine);
+  document.getElementById("pv-category").classList.toggle("hidden", context !== "general" || !state.detailMine);
   document.getElementById("pv-delete").textContent = context === "dish" ? "🗑 Quitar del plato" : "🗑 Eliminar";
   document.getElementById("pv-delete").classList.toggle("hidden", !state.detailMine);
   showCurrentGalleryPhoto();
@@ -229,6 +261,7 @@ function showCurrentGalleryPhoto() {
 function closePhotoViewer() {
   document.getElementById("photo-viewer").classList.add("hidden");
   document.getElementById("pv-dish-picker").classList.add("hidden");
+  document.getElementById("pv-category-picker").classList.add("hidden");
   document.getElementById("pv-image").src = "";
   state.galleryPhotos = [];
 }
@@ -292,6 +325,7 @@ document.getElementById("pv-delete").addEventListener("click", async () => {
 });
 
 document.getElementById("pv-assign").addEventListener("click", () => {
+  document.getElementById("pv-category-picker").classList.add("hidden");
   const select = document.getElementById("pv-dish-select");
   select.innerHTML = state.currentDishes
     .map((d) => `<option value="${d.id}">${escapeHtml(d.name)}</option>`)
@@ -318,19 +352,55 @@ document.getElementById("pv-dish-confirm").addEventListener("click", async () =>
   }
 });
 
-document.getElementById("photo-input").addEventListener("change", async (e) => {
-  const files = Array.from(e.target.files);
+document.getElementById("pv-category").addEventListener("click", () => {
+  document.getElementById("pv-dish-picker").classList.add("hidden");
+  const photo = state.galleryPhotos[state.galleryIndex];
+  document.getElementById("pv-category-select").value = photo.category || "";
+  document.getElementById("pv-category-picker").classList.toggle("hidden");
+});
+document.getElementById("pv-category-cancel").addEventListener("click", () => {
+  document.getElementById("pv-category-picker").classList.add("hidden");
+});
+document.getElementById("pv-category-confirm").addEventListener("click", async () => {
+  const photo = state.galleryPhotos[state.galleryIndex];
+  const category = document.getElementById("pv-category-select").value || null;
+  try {
+    await api(`/api/photos/${photo.id}/category`, {
+      method: "PUT",
+      body: JSON.stringify({ category }),
+    });
+    closePhotoViewer();
+    openDetail(state.currentRestaurantId);
+  } catch (e) {
+    toast(e.message);
+  }
+});
+
+async function uploadPhotos(files, category) {
   for (const file of files) {
     const fd = new FormData();
     fd.append("photo", file);
+    if (category) fd.append("category", category);
     try {
       await api(`/api/restaurants/${state.currentRestaurantId}/photos`, { method: "POST", body: fd });
     } catch (err) {
       toast(err.message);
     }
   }
-  e.target.value = "";
   openDetail(state.currentRestaurantId);
+}
+
+document.getElementById("photo-input-general").addEventListener("change", async (e) => {
+  await uploadPhotos(Array.from(e.target.files), null);
+  e.target.value = "";
+});
+document.getElementById("photo-input-menu").addEventListener("change", async (e) => {
+  await uploadPhotos(Array.from(e.target.files), "menu");
+  e.target.value = "";
+});
+document.getElementById("photo-input-ticket").addEventListener("change", async (e) => {
+  await uploadPhotos(Array.from(e.target.files), "ticket");
+  e.target.value = "";
 });
 
 // Subir una foto directamente para un plato: se añade al repositorio

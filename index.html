@@ -61,8 +61,6 @@
         </div>
       </header>
 
-      <div id="detail-photos" class="photo-strip"></div>
-
       <div class="detail-body">
         <span id="detail-owner-tag" class="owner-tag hidden"></span>
         <h2 id="detail-name" class="restaurant-name"></h2>
@@ -78,11 +76,27 @@
 
         <div class="divider"></div>
 
-        <h3 class="section-label">Fotos generales (fachada, menú, cuenta…)</h3>
+        <h3 class="section-label">Fotos generales (fachada…)</h3>
+        <div id="photos-general" class="photo-strip"></div>
         <label class="btn-ghost upload-label">
           + Añadir foto
-          <input type="file" id="photo-input" accept="image/*" capture="environment" multiple hidden />
+          <input type="file" id="photo-input-general" accept="image/*" capture="environment" multiple hidden />
         </label>
+
+        <h3 class="section-label photo-section-spaced">Menús</h3>
+        <div id="photos-menu" class="photo-strip"></div>
+        <label class="btn-ghost upload-label">
+          + Añadir foto de menú
+          <input type="file" id="photo-input-menu" accept="image/*" capture="environment" multiple hidden />
+        </label>
+
+        <h3 class="section-label photo-section-spaced">Tickets</h3>
+        <div id="photos-ticket" class="photo-strip"></div>
+        <label class="btn-ghost upload-label">
+          + Añadir foto de ticket
+          <input type="file" id="photo-input-ticket" accept="image/*" capture="environment" multiple hidden />
+        </label>
+
         <input type="file" id="dish-photo-input" accept="image/*" capture="environment" hidden />
       </div>
     </div>
@@ -127,12 +141,22 @@
     <button class="pv-nav pv-next" id="pv-next" aria-label="Siguiente">›</button>
     <div class="pv-actions">
       <button class="pv-assign" id="pv-assign">🍽 Usar en un plato</button>
+      <button class="pv-assign" id="pv-category">📋 Categoría</button>
       <button class="pv-delete" id="pv-delete">🗑 Eliminar</button>
     </div>
     <div id="pv-dish-picker" class="pv-dish-picker hidden">
       <select id="pv-dish-select"></select>
       <button class="btn-primary" id="pv-dish-confirm">Asignar</button>
       <button class="btn-ghost" id="pv-dish-cancel">Cancelar</button>
+    </div>
+    <div id="pv-category-picker" class="pv-dish-picker hidden">
+      <select id="pv-category-select">
+        <option value="">General (fachada, otras…)</option>
+        <option value="menu">Menú</option>
+        <option value="ticket">Ticket</option>
+      </select>
+      <button class="btn-primary" id="pv-category-confirm">Guardar</button>
+      <button class="btn-ghost" id="pv-category-cancel">Cancelar</button>
     </div>
   </div>
 
