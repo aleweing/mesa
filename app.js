@@ -10,6 +10,10 @@ const state = {
   currentDishes: [],
   galleryByCategory: { general: [], menu: [], ticket: [] },
   me: null,
+  allRestaurants: [],
+  searchQuery: "",
+  activeFilter: "all",
+  formRepeatValue: "",
   // Visor de fotos
   galleryPhotos: [],
   galleryIndex: 0,
@@ -65,35 +69,65 @@ function mapsUrl(address) {
 
 async function loadList() {
   showView("list");
-  const list = document.getElementById("restaurant-list");
-  const empty = document.getElementById("list-empty");
-  list.innerHTML = "";
   try {
     if (!state.me) {
       const me = await api("/api/me");
       state.me = me.owner;
     }
-    const restaurants = await api("/api/restaurants");
-    empty.classList.toggle("hidden", restaurants.length > 0);
-    for (const r of restaurants) {
-      const li = document.createElement("li");
-      li.className = "ticket-card";
-      const notMine = r.owner !== state.me;
-      li.innerHTML = `
-        ${r.cover_key
-          ? `<img class="ticket-cover" src="${photoUrl(r.cover_key)}" alt="" />`
-          : `<div class="ticket-cover-placeholder">${r.name.charAt(0).toUpperCase()}</div>`}
-        <div class="ticket-info">
-          <p class="ticket-name">${escapeHtml(r.name)}${notMine ? `<span class="ticket-shared-badge">${escapeHtml(r.owner)}</span>` : ""}</p>
-          <p class="ticket-address">${escapeHtml(r.address || "")}</p>
-        </div>`;
-      li.addEventListener("click", () => openDetail(r.id));
-      list.appendChild(li);
-    }
+    state.allRestaurants = await api("/api/restaurants");
+    renderRestaurantList();
   } catch (e) {
     toast(e.message);
   }
 }
+
+function renderRestaurantList() {
+  const list = document.getElementById("restaurant-list");
+  const empty = document.getElementById("list-empty");
+  list.innerHTML = "";
+
+  const query = (state.searchQuery || "").trim().toLowerCase();
+  let filtered = state.allRestaurants.filter((r) => r.name.toLowerCase().includes(query));
+  if (state.activeFilter === "mine") filtered = filtered.filter((r) => r.owner === state.me);
+  if (state.activeFilter === "shared") filtered = filtered.filter((r) => r.owner !== state.me);
+  if (state.activeFilter === "repeat") filtered = filtered.filter((r) => r.repeat_visit === 1);
+
+  empty.classList.toggle("hidden", state.allRestaurants.length > 0);
+
+  for (const r of filtered) {
+    const li = document.createElement("li");
+    li.className = "ticket-card";
+    const notMine = r.owner !== state.me;
+    const repeatBadge = r.repeat_visit === 1
+      ? `<span class="ticket-repeat-badge yes">Repetiría</span>`
+      : r.repeat_visit === 0
+      ? `<span class="ticket-repeat-badge no">No repetiría</span>`
+      : "";
+    li.innerHTML = `
+      ${r.cover_key
+        ? `<img class="ticket-cover" src="${photoUrl(r.cover_key)}" alt="" />`
+        : `<div class="ticket-cover-placeholder">${r.name.charAt(0).toUpperCase()}</div>`}
+      <div class="ticket-info">
+        <p class="ticket-name">${escapeHtml(r.name)}${notMine ? `<span class="ticket-shared-badge">${escapeHtml(r.owner)}</span>` : ""}${repeatBadge}</p>
+        <p class="ticket-address">${escapeHtml(r.address || "")}</p>
+      </div>`;
+    li.addEventListener("click", () => openDetail(r.id));
+    list.appendChild(li);
+  }
+}
+
+document.getElementById("search-input").addEventListener("input", (e) => {
+  state.searchQuery = e.target.value;
+  renderRestaurantList();
+});
+
+document.getElementById("filter-chips").addEventListener("click", (e) => {
+  const btn = e.target.closest(".chip");
+  if (!btn) return;
+  state.activeFilter = btn.dataset.filter;
+  document.querySelectorAll("#filter-chips .chip").forEach((c) => c.classList.toggle("active", c === btn));
+  renderRestaurantList();
+});
 
 function escapeHtml(str) {
   const d = document.createElement("div");
@@ -148,10 +182,21 @@ function renderDetail(r) {
   ownerTag.classList.toggle("hidden", r.mine);
   ownerTag.textContent = r.mine ? "" : `De ${r.owner}`;
 
+  const repeatTag = document.getElementById("detail-repeat-tag");
+  if (r.repeat_visit === 1) {
+    repeatTag.textContent = "Repetiría";
+    repeatTag.className = "repeat-tag yes";
+  } else if (r.repeat_visit === 0) {
+    repeatTag.textContent = "No repetiría";
+    repeatTag.className = "repeat-tag no";
+  } else {
+    repeatTag.className = "repeat-tag hidden";
+  }
+
   document.getElementById("edit-restaurant").classList.toggle("hidden", !r.mine);
   document.getElementById("delete-restaurant").classList.toggle("hidden", !r.mine);
   document.getElementById("add-dish").classList.toggle("hidden", !r.mine);
-  document.querySelector(".upload-label").classList.toggle("hidden", !r.mine);
+  document.querySelectorAll(".upload-label").forEach((el) => el.classList.toggle("hidden", !r.mine));
 
   const addrEl = document.getElementById("detail-address");
   if (r.address) {
@@ -482,12 +527,26 @@ document.getElementById("edit-restaurant").addEventListener("click", async () =>
   document.getElementById("form-phone").value = r.phone || "";
   document.getElementById("form-notes").value = r.notes || "";
   document.getElementById("form-shared").checked = !!r.shared;
+  setRepeatToggle(r.repeat_visit === 1 ? "1" : r.repeat_visit === 0 ? "0" : "");
   showView("form");
 });
 
 document.getElementById("back-from-detail").addEventListener("click", loadList);
 
 // ---------- Formulario (crear / editar) ----------
+
+function setRepeatToggle(value) {
+  state.formRepeatValue = value;
+  document.querySelectorAll("#form-repeat-toggle .stamp-option").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.value === value);
+  });
+}
+
+document.getElementById("form-repeat-toggle").addEventListener("click", (e) => {
+  const btn = e.target.closest(".stamp-option");
+  if (!btn) return;
+  setRepeatToggle(btn.dataset.value);
+});
 
 document.getElementById("fab-add").addEventListener("click", () => {
   state.editingRestaurant = false;
@@ -497,6 +556,7 @@ document.getElementById("fab-add").addEventListener("click", () => {
   document.getElementById("form-phone").value = "";
   document.getElementById("form-notes").value = "";
   document.getElementById("form-shared").checked = false;
+  setRepeatToggle("");
   showView("form");
 });
 
@@ -514,6 +574,7 @@ document.getElementById("save-restaurant").addEventListener("click", async () =>
     phone: document.getElementById("form-phone").value.trim() || null,
     notes: document.getElementById("form-notes").value.trim() || null,
     shared: document.getElementById("form-shared").checked,
+    repeat_visit: state.formRepeatValue === "1" ? 1 : state.formRepeatValue === "0" ? 0 : null,
   };
   try {
     if (state.editingRestaurant) {

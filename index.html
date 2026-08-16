@@ -46,6 +46,16 @@
         <p class="muted">Toca “+” cuando vuelvas de tu próximo restaurante.</p>
       </div>
 
+      <div class="list-controls">
+        <input type="search" id="search-input" class="search-input" placeholder="Buscar por nombre…" />
+        <div class="filter-chips" id="filter-chips">
+          <button class="chip active" data-filter="all">Todos</button>
+          <button class="chip" data-filter="mine">Míos</button>
+          <button class="chip" data-filter="shared">Compartidos</button>
+          <button class="chip" data-filter="repeat">Repetiría</button>
+        </div>
+      </div>
+
       <ul id="restaurant-list" class="ticket-list"></ul>
 
       <button class="fab" id="fab-add" aria-label="Añadir restaurante">+</button>
@@ -63,6 +73,7 @@
 
       <div class="detail-body">
         <span id="detail-owner-tag" class="owner-tag hidden"></span>
+        <span id="detail-repeat-tag" class="repeat-tag hidden"></span>
         <h2 id="detail-name" class="restaurant-name"></h2>
         <a id="detail-address" class="link-row" target="_blank" rel="noopener"></a>
         <a id="detail-phone" class="link-row" href="#"></a>
@@ -129,6 +140,14 @@
           <input type="checkbox" id="form-shared" />
           <span>Compartir con el otro usuario</span>
         </label>
+        <div class="field">
+          <span>¿Repetirías?</span>
+          <div class="stamp-toggle" id="form-repeat-toggle">
+            <button type="button" class="stamp-option" data-value="1">Sí</button>
+            <button type="button" class="stamp-option" data-value="0">No</button>
+            <button type="button" class="stamp-option active" data-value="">Sin valorar</button>
+          </div>
+        </div>
       </div>
     </div>
 
