@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -38,7 +39,10 @@
     <div id="view-list" class="view hidden">
       <header class="topbar">
         <h1 class="brand">Mesa<span class="brand-dot">.</span></h1>
-        <button class="icon-btn" id="open-settings" aria-label="Ajustes">⚙</button>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="open-map" aria-label="Ver en el mapa">🗺</button>
+          <button class="icon-btn" id="open-settings" aria-label="Ajustes">⚙</button>
+        </div>
       </header>
 
       <div id="list-empty" class="empty hidden">
@@ -54,6 +58,12 @@
           <button class="chip" data-filter="shared">Compartidos</button>
           <button class="chip" data-filter="repeat">Repetiría</button>
         </div>
+        <div class="city-filter-row">
+          <input type="text" id="city-filter-input" class="search-input city-filter-input" list="city-datalist" placeholder="Filtrar por ciudad…" autocomplete="off" />
+          <datalist id="city-datalist"></datalist>
+          <button class="icon-btn" id="clear-city-filter" aria-label="Quitar filtro de ciudad">✕</button>
+        </div>
+        <p class="city-empty-msg hidden" id="city-empty-msg"></p>
       </div>
 
       <ul id="restaurant-list" class="ticket-list"></ul>
@@ -128,6 +138,11 @@
           <span>Dirección</span>
           <input type="text" id="form-address" placeholder="Calle, ciudad" />
         </label>
+        <button type="button" class="btn-ghost-full" id="open-pin-drop">📍 Elegir en el mapa</button>
+        <label class="field">
+          <span>Ciudad</span>
+          <input type="text" id="form-city" placeholder="Se rellena sola si eliges en el mapa" />
+        </label>
         <label class="field">
           <span>Teléfono</span>
           <input type="tel" id="form-phone" placeholder="Para reservar" />
@@ -147,6 +162,37 @@
             <button type="button" class="stamp-option" data-value="0">No</button>
             <button type="button" class="stamp-option active" data-value="">Sin valorar</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mapa -->
+    <div id="view-map" class="view hidden">
+      <div class="map-screen">
+        <div id="leaflet-map"></div>
+        <div class="map-topbar">
+          <button class="icon-btn" id="back-from-map" aria-label="Volver a la lista">←</button>
+          <input type="text" id="city-filter-input-map" class="map-pill map-pill-input" list="city-datalist" placeholder="Filtrar por ciudad…" autocomplete="off" />
+        </div>
+        <div class="map-empty-msg hidden" id="map-empty-msg">
+          <p class="empty-title">Sin resultados</p>
+          <p class="muted" id="map-empty-text"></p>
+        </div>
+        <button class="fab-map" id="fab-map-add" aria-label="Añadir restaurante">+</button>
+      </div>
+    </div>
+
+    <!-- Elegir ubicación en el mapa (paso 1: colocar el pin) -->
+    <div id="view-pin-drop" class="view hidden">
+      <div class="map-screen">
+        <div id="leaflet-map-pin"></div>
+        <div class="pin-drop-hint">Mueve el mapa para colocar el pin en la puerta del restaurante</div>
+        <div class="pin-drop-center">
+          <div class="mesa-pin"><div class="mesa-pin-head"><span>+</span></div></div>
+        </div>
+        <div class="pin-confirm-bar">
+          <button class="icon-btn" id="pin-drop-cancel" aria-label="Cancelar" style="margin-bottom:10px;">←</button>
+          <button class="btn-primary-full" id="pin-drop-confirm">Confirmar ubicación aquí</button>
         </div>
       </div>
     </div>
@@ -181,6 +227,7 @@
 
   <div id="toast" class="toast hidden"></div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

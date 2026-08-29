@@ -14,6 +14,9 @@ const state = {
   searchQuery: "",
   activeFilter: "all",
   formRepeatValue: "",
+  cityFilter: "",
+  formLat: null,
+  formLng: null,
   // Visor de fotos
   galleryPhotos: [],
   galleryIndex: 0,
@@ -26,6 +29,8 @@ const views = {
   list: document.getElementById("view-list"),
   detail: document.getElementById("view-detail"),
   form: document.getElementById("view-form"),
+  map: document.getElementById("view-map"),
+  pinDrop: document.getElementById("view-pin-drop"),
 };
 
 function showView(name) {
@@ -75,24 +80,46 @@ async function loadList() {
       state.me = me.owner;
     }
     state.allRestaurants = await api("/api/restaurants");
+    updateCityDatalist();
     renderRestaurantList();
   } catch (e) {
     toast(e.message);
   }
 }
 
-function renderRestaurantList() {
-  const list = document.getElementById("restaurant-list");
-  const empty = document.getElementById("list-empty");
-  list.innerHTML = "";
+function updateCityDatalist() {
+  const cities = [...new Set(state.allRestaurants.map((r) => r.city).filter(Boolean))].sort();
+  document.getElementById("city-datalist").innerHTML = cities.map((c) => `<option value="${escapeHtml(c)}"></option>`).join("");
+}
 
+function applyFilters(list) {
   const query = (state.searchQuery || "").trim().toLowerCase();
-  let filtered = state.allRestaurants.filter((r) => r.name.toLowerCase().includes(query));
+  let filtered = list.filter((r) => r.name.toLowerCase().includes(query));
   if (state.activeFilter === "mine") filtered = filtered.filter((r) => r.owner === state.me);
   if (state.activeFilter === "shared") filtered = filtered.filter((r) => r.owner !== state.me);
   if (state.activeFilter === "repeat") filtered = filtered.filter((r) => r.repeat_visit === 1);
+  if (state.cityFilter.trim()) {
+    const c = state.cityFilter.trim().toLowerCase();
+    filtered = filtered.filter((r) => (r.city || "").toLowerCase() === c);
+  }
+  return filtered;
+}
+
+function renderRestaurantList() {
+  const list = document.getElementById("restaurant-list");
+  const empty = document.getElementById("list-empty");
+  const cityEmptyMsg = document.getElementById("city-empty-msg");
+  list.innerHTML = "";
+
+  const filtered = applyFilters(state.allRestaurants);
 
   empty.classList.toggle("hidden", state.allRestaurants.length > 0);
+
+  const cityIsEmpty = state.cityFilter.trim() && filtered.length === 0;
+  cityEmptyMsg.classList.toggle("hidden", !cityIsEmpty);
+  if (cityIsEmpty) {
+    cityEmptyMsg.textContent = `No tienes restaurantes visitados en ${state.cityFilter.trim()}.`;
+  }
 
   for (const r of filtered) {
     const li = document.createElement("li");
@@ -127,6 +154,147 @@ document.getElementById("filter-chips").addEventListener("click", (e) => {
   state.activeFilter = btn.dataset.filter;
   document.querySelectorAll("#filter-chips .chip").forEach((c) => c.classList.toggle("active", c === btn));
   renderRestaurantList();
+});
+
+function setCityFilter(value) {
+  state.cityFilter = value;
+  document.getElementById("city-filter-input").value = value;
+  document.getElementById("city-filter-input-map").value = value;
+  renderRestaurantList();
+  if (mapMain) renderMapMarkers();
+}
+
+document.getElementById("city-filter-input").addEventListener("input", (e) => setCityFilter(e.target.value));
+document.getElementById("city-filter-input-map").addEventListener("input", (e) => setCityFilter(e.target.value));
+document.getElementById("clear-city-filter").addEventListener("click", () => setCityFilter(""));
+
+// ---------- Mapa ----------
+
+let mapMain = null;
+let mapMarkers = [];
+const MALLORCA_CENTER = [39.55, 2.85];
+
+function pinIcon(r) {
+  const cls = r.repeat_visit === 1 ? "repeat" : r.owner !== state.me ? "notmine" : "";
+  const letter = r.name.charAt(0).toUpperCase();
+  return L.divIcon({
+    className: "",
+    html: `<div class="mesa-pin ${cls}"><div class="mesa-pin-head"><span>${letter}</span></div></div>`,
+    iconSize: [34, 42],
+    iconAnchor: [17, 42],
+  });
+}
+
+function initMainMap() {
+  if (mapMain) {
+    setTimeout(() => mapMain.invalidateSize(), 50);
+    return;
+  }
+  mapMain = L.map("leaflet-map").setView(MALLORCA_CENTER, 10);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(mapMain);
+  renderMapMarkers();
+  setTimeout(() => mapMain.invalidateSize(), 100);
+}
+
+function renderMapMarkers() {
+  if (!mapMain) return;
+  mapMarkers.forEach((m) => mapMain.removeLayer(m));
+  mapMarkers = [];
+
+  const filtered = applyFilters(state.allRestaurants);
+  const plottable = filtered.filter((r) => r.lat != null && r.lng != null);
+
+  plottable.forEach((r) => {
+    const marker = L.marker([r.lat, r.lng], { icon: pinIcon(r) }).addTo(mapMain);
+    marker.on("click", () => openDetail(r.id));
+    mapMarkers.push(marker);
+  });
+
+  const emptyMsg = document.getElementById("map-empty-msg");
+  const emptyText = document.getElementById("map-empty-text");
+  if (filtered.length === 0) {
+    emptyMsg.classList.remove("hidden");
+    emptyText.textContent = state.cityFilter.trim()
+      ? `No tienes restaurantes visitados en ${state.cityFilter.trim()}.`
+      : "Ningún restaurante coincide con estos filtros.";
+  } else if (plottable.length === 0) {
+    emptyMsg.classList.remove("hidden");
+    emptyText.textContent = "Ninguno de estos restaurantes tiene ubicación guardada en el mapa todavía.";
+  } else {
+    emptyMsg.classList.add("hidden");
+    if (plottable.length === 1) {
+      mapMain.setView([plottable[0].lat, plottable[0].lng], 15);
+    } else {
+      mapMain.fitBounds(L.latLngBounds(plottable.map((r) => [r.lat, r.lng])), { padding: [40, 60] });
+    }
+  }
+}
+
+document.getElementById("open-map").addEventListener("click", () => {
+  showView("map");
+  initMainMap();
+});
+document.getElementById("back-from-map").addEventListener("click", loadList);
+
+document.getElementById("fab-map-add").addEventListener("click", () => {
+  state.editingRestaurant = false;
+  document.getElementById("form-title").textContent = "Nueva mesa";
+  document.getElementById("form-name").value = "";
+  document.getElementById("form-address").value = "";
+  document.getElementById("form-city").value = "";
+  document.getElementById("form-phone").value = "";
+  document.getElementById("form-notes").value = "";
+  document.getElementById("form-shared").checked = false;
+  setRepeatToggle("");
+  state.formLat = null;
+  state.formLng = null;
+  openPinDrop();
+});
+
+// ---------- Elegir ubicación en el mapa ----------
+
+let mapPin = null;
+
+function openPinDrop() {
+  showView("pinDrop");
+  const center = state.formLat != null && state.formLng != null ? [state.formLat, state.formLng] : MALLORCA_CENTER;
+  if (!mapPin) {
+    mapPin = L.map("leaflet-map-pin").setView(center, 16);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(mapPin);
+  } else {
+    mapPin.setView(center, 16);
+  }
+  setTimeout(() => mapPin.invalidateSize(), 100);
+}
+
+document.getElementById("open-pin-drop").addEventListener("click", openPinDrop);
+document.getElementById("pin-drop-cancel").addEventListener("click", () => showView("form"));
+
+document.getElementById("pin-drop-confirm").addEventListener("click", async () => {
+  const center = mapPin.getCenter();
+  state.formLat = center.lat;
+  state.formLng = center.lng;
+  const btn = document.getElementById("pin-drop-confirm");
+  btn.textContent = "Localizando dirección…";
+  btn.disabled = true;
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${center.lat}&lon=${center.lng}`
+    );
+    const data = await res.json();
+    const a = data.address || {};
+    document.getElementById("form-address").value = data.display_name || "";
+    document.getElementById("form-city").value = a.city || a.town || a.village || a.municipality || "";
+  } catch (e) {
+    toast("No se pudo obtener la dirección automáticamente, escríbela a mano");
+  }
+  btn.textContent = "Confirmar ubicación aquí";
+  btn.disabled = false;
+  showView("form");
 });
 
 function escapeHtml(str) {
@@ -201,7 +369,9 @@ function renderDetail(r) {
   const addrEl = document.getElementById("detail-address");
   if (r.address) {
     addrEl.textContent = "📍 " + r.address;
-    addrEl.href = mapsUrl(r.address);
+    addrEl.href = r.lat != null && r.lng != null
+      ? `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`
+      : mapsUrl(r.address);
   } else {
     addrEl.textContent = "";
     addrEl.removeAttribute("href");
@@ -524,9 +694,12 @@ document.getElementById("edit-restaurant").addEventListener("click", async () =>
   document.getElementById("form-title").textContent = "Editar mesa";
   document.getElementById("form-name").value = r.name;
   document.getElementById("form-address").value = r.address || "";
+  document.getElementById("form-city").value = r.city || "";
   document.getElementById("form-phone").value = r.phone || "";
   document.getElementById("form-notes").value = r.notes || "";
   document.getElementById("form-shared").checked = !!r.shared;
+  state.formLat = r.lat ?? null;
+  state.formLng = r.lng ?? null;
   setRepeatToggle(r.repeat_visit === 1 ? "1" : r.repeat_visit === 0 ? "0" : "");
   showView("form");
 });
@@ -553,10 +726,13 @@ document.getElementById("fab-add").addEventListener("click", () => {
   document.getElementById("form-title").textContent = "Nueva mesa";
   document.getElementById("form-name").value = "";
   document.getElementById("form-address").value = "";
+  document.getElementById("form-city").value = "";
   document.getElementById("form-phone").value = "";
   document.getElementById("form-notes").value = "";
   document.getElementById("form-shared").checked = false;
   setRepeatToggle("");
+  state.formLat = null;
+  state.formLng = null;
   showView("form");
 });
 
@@ -575,6 +751,9 @@ document.getElementById("save-restaurant").addEventListener("click", async () =>
     notes: document.getElementById("form-notes").value.trim() || null,
     shared: document.getElementById("form-shared").checked,
     repeat_visit: state.formRepeatValue === "1" ? 1 : state.formRepeatValue === "0" ? 0 : null,
+    city: document.getElementById("form-city").value.trim() || null,
+    lat: state.formLat,
+    lng: state.formLng,
   };
   try {
     if (state.editingRestaurant) {
