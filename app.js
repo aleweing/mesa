@@ -190,10 +190,11 @@ function initMainMap() {
     setTimeout(() => mapMain.invalidateSize(), 50);
     return;
   }
-  mapMain = L.map("leaflet-map").setView(MALLORCA_CENTER, 10);
+  mapMain = L.map("leaflet-map", { zoomControl: false, attributionControl: false }).setView(MALLORCA_CENTER, 10);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(mapMain);
+  L.control.attribution({ position: "bottomleft", prefix: false }).addTo(mapMain);
   renderMapMarkers();
   setTimeout(() => mapMain.invalidateSize(), 100);
 }
@@ -261,10 +262,11 @@ function openPinDrop() {
   showView("pinDrop");
   const center = state.formLat != null && state.formLng != null ? [state.formLat, state.formLng] : MALLORCA_CENTER;
   if (!mapPin) {
-    mapPin = L.map("leaflet-map-pin").setView(center, 16);
+    mapPin = L.map("leaflet-map-pin", { zoomControl: false, attributionControl: false }).setView(center, 16);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(mapPin);
+    L.control.attribution({ position: "bottomleft", prefix: false }).addTo(mapPin);
   } else {
     mapPin.setView(center, 16);
   }

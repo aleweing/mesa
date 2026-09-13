@@ -563,11 +563,11 @@ body {
 }
 
 /* ---------- Mapa ---------- */
-.map-screen { position: fixed; inset: 0; }
-#leaflet-map, #leaflet-map-pin { position: absolute; inset: 0; }
+.map-screen { position: fixed; inset: 0; z-index: 10; }
+#leaflet-map, #leaflet-map-pin { position: absolute; inset: 0; z-index: 1; }
 
 .map-topbar {
-  position: absolute; top: calc(env(safe-area-inset-top) + 16px); left: 16px; right: 16px; z-index: 20;
+  position: absolute; top: calc(env(safe-area-inset-top) + 16px); left: 16px; right: 16px; z-index: 900;
   display: flex; gap: 8px; align-items: center;
 }
 .map-pill-input {
@@ -597,14 +597,14 @@ body {
 .mesa-pin.notmine .mesa-pin-head { background: var(--paper-dim); }
 
 .fab-map {
-  position: absolute; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 20;
+  position: absolute; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 900;
   width: 56px; height: 56px; border-radius: 50%;
   background: var(--ochre); color: var(--ink); border: none;
   font-size: 28px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
 }
 
 .map-empty-msg {
-  position: absolute; top: 50%; left: 24px; right: 24px; z-index: 20;
+  position: absolute; top: 50%; left: 24px; right: 24px; z-index: 900;
   transform: translateY(-50%);
   text-align: center;
   background: rgba(42,49,40,0.95);
@@ -615,18 +615,18 @@ body {
 }
 
 .pin-drop-center {
-  position: absolute; top: 50%; left: 50%; z-index: 15;
+  position: absolute; top: 50%; left: 50%; z-index: 850;
   transform: translate(-50%, -100%);
   pointer-events: none;
 }
 .pin-drop-hint {
-  position: absolute; top: calc(env(safe-area-inset-top) + 16px); left: 16px; right: 16px; z-index: 20;
+  position: absolute; top: calc(env(safe-area-inset-top) + 16px); left: 16px; right: 16px; z-index: 900;
   background: rgba(42,49,40,0.94); backdrop-filter: blur(6px);
   border: 1px solid var(--card-line); border-radius: 10px;
   padding: 10px 14px; font-size: 13px; text-align: center; color: var(--paper-dim);
 }
 .pin-confirm-bar {
-  position: absolute; left: 12px; right: 12px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 20;
+  position: absolute; left: 12px; right: 12px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 900;
   display: flex; flex-direction: column; align-items: stretch;
 }
 .btn-primary-full {

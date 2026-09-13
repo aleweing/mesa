@@ -1,4 +1,4 @@
-const CACHE = "mesa-v10";
+const CACHE = "mesa-v11";
 const SHELL = ["./", "index.html", "style.css", "app.js", "manifest.json"];
 
 self.addEventListener("install", (event) => {
