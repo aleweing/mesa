@@ -239,7 +239,7 @@ document.getElementById("open-map").addEventListener("click", () => {
 });
 document.getElementById("back-from-map").addEventListener("click", loadList);
 
-document.getElementById("fab-map-add").addEventListener("click", () => {
+function resetRestaurantForm() {
   state.editingRestaurant = false;
   document.getElementById("form-title").textContent = "Nueva mesa";
   document.getElementById("form-name").value = "";
@@ -251,6 +251,10 @@ document.getElementById("fab-map-add").addEventListener("click", () => {
   setRepeatToggle("");
   state.formLat = null;
   state.formLng = null;
+}
+
+document.getElementById("fab-map-add").addEventListener("click", () => {
+  resetRestaurantForm();
   openPinDrop();
 });
 
@@ -724,17 +728,7 @@ document.getElementById("form-repeat-toggle").addEventListener("click", (e) => {
 });
 
 document.getElementById("fab-add").addEventListener("click", () => {
-  state.editingRestaurant = false;
-  document.getElementById("form-title").textContent = "Nueva mesa";
-  document.getElementById("form-name").value = "";
-  document.getElementById("form-address").value = "";
-  document.getElementById("form-city").value = "";
-  document.getElementById("form-phone").value = "";
-  document.getElementById("form-notes").value = "";
-  document.getElementById("form-shared").checked = false;
-  setRepeatToggle("");
-  state.formLat = null;
-  state.formLng = null;
+  resetRestaurantForm();
   showView("form");
 });
 
